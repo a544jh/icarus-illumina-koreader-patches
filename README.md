@@ -70,12 +70,14 @@ and sending queued sync positions (that needs a sync account; it's only tested o
 KOReader's settings, history and reading positions are on the internal storage in
 `koreader/`, and survive uninstalling the app.
 
-1. Build the APK (next section).
+1. Download the APK from
+   [Releases](https://github.com/a544jh/icarus-illumina-koreader-patches/releases), or
+   build it yourself (next section).
 2. The patched APK has a different signature, so remove the stock KOReader first, then
    install it:
    ```sh
    adb uninstall org.koreader.launcher
-   adb install koreader-v2023.06.1-icarus.apk
+   adb install koreader-android-arm-v2023.06.1-icarus1.apk
    ```
    Later builds signed with the same key install over it with `adb install -r`.
 3. Copy the Lua patches to `koreader/patches/` on the internal storage (create the
