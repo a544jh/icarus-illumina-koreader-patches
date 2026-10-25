@@ -1,0 +1,19 @@
+--- a/org/koreader/launcher/device/DeviceInfo.smali
++++ b/org/koreader/launcher/device/DeviceInfo.smali
+@@ -454,6 +454,16 @@
+     goto :goto_7c
+ 
+     :cond_74
++    # icarus patch: the Icarus Illumina E653 is a rebadged Boyue T61
++    # (ro.product.manufacturer=Icarus, same firmware and EPD API)
++    const-string v6, "icarus"
++
++    invoke-virtual {v1, v6}, Ljava/lang/String;->contentEquals(Ljava/lang/CharSequence;)Z
++
++    move-result v6
++
++    if-nez v6, :goto_7c
++
+     const/4 v6, 0x0
+ 
+     goto :goto_7d
