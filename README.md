@@ -89,18 +89,9 @@ KOReader's settings, history and reading positions are on the internal storage i
    adb uninstall org.koreader.launcher
    adb install koreader-android-arm-v2023.06.1-icarus2.apk
    ```
-   Later builds signed with the same key install over it with `adb install -r`. Close
-   KOReader first, and delete `files/git-rev` before starting it again:
-   ```sh
-   adb install -r koreader-android-arm-v2023.06.1-icarus2.apk
-   adb shell rm /data/data/org.koreader.launcher/files/git-rev
-   ```
-   Without that, dictionary lookups stop working. Every build reports the same version
-   (v2023.06.1), so the launcher skips unpacking itself again and keeps its link to the
-   dictionary program in the old app folder, which Android 4.2 moves on every update.
-   Deleting `git-rev` makes the next start unpack again (about 25 s), which recreates the
-   link. The `rm` needs root; the E653's adb shell has it. Without root, uninstall and
-   install instead.
+   Later builds signed with the same key install over it with `adb install -r`. The
+   first start after an update takes about 25 s longer while KOReader unpacks itself
+   (see [Version label](#version-label)). This also works when updating from icarus1.
 3. Copy the Lua patches to `koreader/patches/` on the internal storage (create the
    folder if needed), over USB storage or with adb:
    ```sh
@@ -122,12 +113,12 @@ the patches from `koreader/patches/`.
 ## Building the APK
 
 `build.sh` takes the official KOReader release APK, disassembles its `classes.dex` with
-baksmali, applies the diffs in `smali/`, adds the new classes, reassembles it, and
-signs the APK with your key.
+baksmali, applies the diffs in `smali/`, adds the new classes, reassembles it, sets the
+build's [version label](#version-label), and signs the APK with your key.
 
-**Requirements:** bash, Python 3, `patch`, OpenSSL (tested with 3.6), and a JDK 11 or
-newer (`java`, `jarsigner`, `keytool`; tested with 27). Java 8's `keytool` writes
-keystores that OpenSSL 3 can't read.
+**Requirements:** bash, Python 3, `patch`, OpenSSL (tested with 3.6), 7-Zip's `7z`
+(tested with 7-Zip 26.05), and a JDK 11 or newer (`java`, `jarsigner`, `keytool`;
+tested with 27). Java 8's `keytool` writes keystores that OpenSSL 3 can't read.
 
 1. Get smali/baksmali 2.5.2 and the official KOReader v2023.06.1 ARM APK:
    ```sh
@@ -152,10 +143,31 @@ keystores that OpenSSL 3 can't read.
        ./build.sh koreader-android-arm-v2023.06.1.apk koreader-v2023.06.1-icarus.apk
    ```
    Optional variables: `JAVA_HOME` (if `jarsigner` isn't on `PATH`), `KEY_ALIAS`
-   (default `icarus`), `BAKSMALI_JAR` and `SMALI_JAR` (default `tools/`).
+   (default `icarus`), `BAKSMALI_JAR` and `SMALI_JAR` (default `tools/`), `SEVENZIP`
+   (default `7z`; for example `7zz` where 7-Zip is installed under that name).
 
 The build isn't byte-for-byte reproducible: smali 2.5.2 lays out the dex file a little
 differently on every run. The disassembled code is the same, though.
+
+### Version label
+
+Each build carries its own version label, set as `version=` at the top of `build.sh`
+(this one is `v2023.06.1-icarus2`). Bump it for every release.
+
+- **Why it's needed:** on first start, the launcher unpacks KOReader from
+  `assets/module/koreader.7z` into the app's folder. Later it unpacks again only when
+  `assets/module/version.txt` differs from `files/git-rev`, a file that comes out of
+  `koreader.7z` itself. The unpack also recreates the link to the dictionary program,
+  which Android 4.2 moves to a new folder on every update. With the same label in every
+  build, an update would skip the unpack, the link would keep pointing at the old
+  folder, and dictionary lookups would break.
+- **What `build.sh` does:** it writes the label into both files, `version.txt` and
+  `git-rev` inside `koreader.7z`. An update then unpacks once, and later starts skip it.
+  Changing only `version.txt` would make every start unpack, because `git-rev` would
+  never match.
+- **What KOReader shows:** it reads the label as the same version number as
+  v2023.06.1, so settings migrations and the quickstart guide behave as in the official
+  release. Help → Version and the About screen show the full label.
 
 ### Why the signing is unusual
 
