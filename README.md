@@ -72,8 +72,6 @@ These need a rebuilt APK; see [Building the APK](#building-the-apk).
 
 Everything works on the E653. Not tested there yet: the "Toggle Fullscreen" gesture,
 and sending queued sync positions (that needs a sync account; it's only tested on a PC).
-The dictionary fix was tested on the E653 by running the launcher's unpack code on a
-real dictionary archive, not yet through a download in KOReader's menu.
 
 ## Installing
 
