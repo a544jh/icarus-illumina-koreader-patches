@@ -43,6 +43,14 @@ These need a rebuilt APK; see [Building the APK](#building-the-apk).
 - **Fixes fullscreen:** the bottom bar (Back, Home, clock) hides while KOReader is in
   front and comes back in other apps. KOReader's Settings → Screen → Fullscreen turns
   it on and off (on by default).
+- **Fixes dictionary downloads:** downloaded dictionaries now unpack. Before, every
+  download from the Download dictionaries menu failed with "Extracting archive failed"
+  and left an empty folder plus the archive in `koreader/data/dict/`. The launcher
+  unpacks with Apache Commons Compress, which uses `java.nio.charset.StandardCharsets`,
+  and Android only has that class from 4.4 on. The patch uses
+  `Charset.forName("UTF-8")` instead. Any other error while unpacking is now caught and
+  logged (`adb logcat -s System.err`) instead of escaping into KOReader. Dictionaries
+  that failed before can simply be downloaded again.
 
 ### Lua user patches (`patches/`)
 
@@ -64,6 +72,8 @@ These need a rebuilt APK; see [Building the APK](#building-the-apk).
 
 Everything works on the E653. Not tested there yet: the "Toggle Fullscreen" gesture,
 and sending queued sync positions (that needs a sync account; it's only tested on a PC).
+The dictionary fix was tested on the E653 by running the launcher's unpack code on a
+real dictionary archive, not yet through a download in KOReader's menu.
 
 ## Installing
 
@@ -77,9 +87,20 @@ KOReader's settings, history and reading positions are on the internal storage i
    install it:
    ```sh
    adb uninstall org.koreader.launcher
-   adb install koreader-android-arm-v2023.06.1-icarus1.apk
+   adb install koreader-android-arm-v2023.06.1-icarus2.apk
    ```
-   Later builds signed with the same key install over it with `adb install -r`.
+   Later builds signed with the same key install over it with `adb install -r`. Close
+   KOReader first, and delete `files/git-rev` before starting it again:
+   ```sh
+   adb install -r koreader-android-arm-v2023.06.1-icarus2.apk
+   adb shell rm /data/data/org.koreader.launcher/files/git-rev
+   ```
+   Without that, dictionary lookups stop working. Every build reports the same version
+   (v2023.06.1), so the launcher skips unpacking itself again and keeps its link to the
+   dictionary program in the old app folder, which Android 4.2 moves on every update.
+   Deleting `git-rev` makes the next start unpack again (about 25 s), which recreates the
+   link. The `rm` needs root; the E653's adb shell has it. Without root, uninstall and
+   install instead.
 3. Copy the Lua patches to `koreader/patches/` on the internal storage (create the
    folder if needed), over USB storage or with adb:
    ```sh
@@ -163,7 +184,9 @@ cp smali/*.smali out/org/koreader/launcher/
 
 The launcher's source for v2023.06.1 is
 [android-luajit-launcher](https://github.com/koreader/android-luajit-launcher) commit
-`eb0fb50`: `MainActivity.kt` and `device/DeviceInfo.kt`.
+`eb0fb50`: `MainActivity.kt`, `device/DeviceInfo.kt` and
+`extensions/FileExtensions.kt`. `ZipEncodingHelper` comes from the bundled Apache
+Commons Compress library.
 
 ## Standby battery drain (firmware power manager)
 
@@ -215,7 +238,7 @@ Also look for apps that wake the reader. On the tested unit, Google Play Service
 |---|---|
 | `build.sh` | Builds the patched APK from the official one |
 | `repack.py` | Swaps `classes.dex` and the signature block in the APK, and aligns it |
-| `smali/*.diff` | Changes to the launcher's `MainActivity` and `DeviceInfo` |
+| `smali/*.diff` | Changes to the launcher's `MainActivity`, `DeviceInfo` and `FileExtensionsKt`, and to the bundled Commons Compress `ZipEncodingHelper` |
 | `smali/*.smali` | New launcher classes (bar update and e-ink refresh runnables) |
 | `patches/*.lua` | KOReader user patches |
 
@@ -227,3 +250,6 @@ Also look for apps that wake the reader. On the tested unit, Google Play Service
 - The smali patches change KOReader's Android launcher,
   [android-luajit-launcher](https://github.com/koreader/android-luajit-launcher),
   which is MIT-licensed.
+- `ZipEncodingHelper.smali.diff` changes
+  [Apache Commons Compress](https://commons.apache.org/proper/commons-compress/),
+  which the launcher bundles and which is under the Apache License 2.0.

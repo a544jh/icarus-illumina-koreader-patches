@@ -1,0 +1,28 @@
+--- a/org/apache/commons/compress/archivers/zip/ZipEncodingHelper.smali
++++ b/org/apache/commons/compress/archivers/zip/ZipEncodingHelper.smali
+@@ -53,7 +53,11 @@
+ 
+     .line 5
+     :cond_18
+-    sget-object v1, Ljava/nio/charset/StandardCharsets;->UTF_8:Ljava/nio/charset/Charset;
++    const-string v1, "UTF-8"
++
++    invoke-static {v1}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
++
++    move-result-object v1
+ 
+     invoke-virtual {v1}, Ljava/nio/charset/Charset;->name()Ljava/lang/String;
+ 
+@@ -71,7 +75,11 @@
+ 
+     .line 6
+     :cond_26
+-    sget-object v1, Ljava/nio/charset/StandardCharsets;->UTF_8:Ljava/nio/charset/Charset;
++    const-string v1, "UTF-8"
++
++    invoke-static {v1}, Ljava/nio/charset/Charset;->forName(Ljava/lang/String;)Ljava/nio/charset/Charset;
++
++    move-result-object v1
+ 
+     invoke-virtual {v1}, Ljava/nio/charset/Charset;->aliases()Ljava/util/Set;
+ 

@@ -1,0 +1,20 @@
+--- a/org/koreader/launcher/extensions/FileExtensionsKt.smali
++++ b/org/koreader/launcher/extensions/FileExtensionsKt.smali
+@@ -423,7 +423,7 @@
+ 
+     move-result p1
+     :try_end_17
+-    .catch Ljava/io/IOException; {:try_start_a .. :try_end_17} :catch_18
++    .catch Ljava/lang/Throwable; {:try_start_a .. :try_end_17} :catch_18
+ 
+     goto :goto_1d
+ 
+@@ -431,7 +431,7 @@
+     move-exception p1
+ 
+     .line 2
+-    invoke-virtual {p1}, Ljava/io/IOException;->printStackTrace()V
++    invoke-virtual {p1}, Ljava/lang/Throwable;->printStackTrace()V
+ 
+     const/4 p1, 0x0
+ 
